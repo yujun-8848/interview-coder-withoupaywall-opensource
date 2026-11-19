@@ -172,6 +172,32 @@ yarn package-win
 
 The packaged applications will be available in the `release` directory.
 
+**Offline packaging (slow / blocked mirror):** `electron-builder` downloads the Electron
+binaries on first run. If the mirror is slow and packaging fails with
+`ERR_ELECTRON_BUILDER_CANNOT_EXECUTE` / `EOF`, drop the zips into `electron-dist/` and package
+without touching the network:
+
+```bash
+# one-off: stage the Electron zips (name = electron-v<version>-<platform>-<arch>.zip)
+cp ~/Library/Caches/electron/electron-v*-darwin-*.zip electron-dist/     # macOS
+cp %LOCALAPPDATA%\electron\Cache\electron-v*-win32-x64.zip electron-dist\   # Windows
+
+npm run package-mac:offline    # macOS: dmg + zip, x64 and arm64
+npm run package-win:offline    # Windows: nsis installer
+npm run package-linux:offline  # Linux: AppImage
+```
+
+On macOS the Windows/Linux scripts also point `ELECTRON_BUILDER_BINARIES_MIRROR` at the
+npmmirror copy of `electron-builder-binaries`, because cross-building still needs
+`winCodeSign` / `wine` / `nsis` from there and GitHub releases are often unreachable.
+
+Each `*:offline` script first runs `tools/verify-electron-dist.mjs`, which checks that the zips
+matching the installed Electron version exist and tells you exactly which file is missing, then
+packages with `--config.electronDist=electron-dist` so `electron-builder` unpacks the local zips
+instead of downloading them. The macOS variant also disables code signing and notarization, so
+the result is an unsigned app for local use. The whole `electron-dist/` folder is git-ignored (the zips are a few hundred MB) and only lives
+on your machine; see `tools/electron-dist.md` for the file list and where to get them.
+
 **What the scripts do:**
 - Create necessary directories for the application
 - Clean previous builds to ensure a fresh start

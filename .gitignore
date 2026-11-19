@@ -10,3 +10,5 @@ dist
 scripts/
 **/scripts/
 scripts/manual-notarize.js
+# 离线 electron 二进制目录（体积大，放本地不入库）
+electron-dist/
